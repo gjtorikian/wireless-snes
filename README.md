@@ -1,6 +1,6 @@
 # SNES-Controller-Interceptor
 
-Based very heavily on @jasburns' [NintendoSpy](https://github.com/jaburns/NintendoSpy), this is an Arduino Uno sketch that will intercept SNES controller data and send it back to the SNES console.
+Based very heavily on @jasburns' [NintendoSpy](https://github.com/jaburns/NintendoSpy), this is an Arduino sketch that will intercept SNES controller data and send it back to the SNES console.
 
 [This guide](http://speedrun.evilash25.com/2017/02/controller-input-display-and-arduino.html) should help with more information on wiring. Once you're all set you should connect the wires to the Arduino like this:
 

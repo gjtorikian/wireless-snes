@@ -88,7 +88,7 @@ void read_shiftRegister(unsigned char bits)
 // Mostly for debugging.
 inline void sendRawData()
 {
-  unsigned char i = 0
+  unsigned char i = 0;
   for(i; i < SNES_BITCOUNT; i++) {
     if (rawData[i]) {
       Serial.print(name[i]);

@@ -4,12 +4,11 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define PIN_READ(pin)  (PIND&(1<<(pin)))
 
 #define WAIT_FALLING_EDGE(pin) while( !PIN_READ(pin) ); while( PIN_READ(pin) );
-
 
 #define DATA_OUT_PIN  PORTB2 // 10
 #define DATA_OUT_PORT DDB2 // 10
@@ -17,6 +16,7 @@
 #define SNES_LATCH      3 // white
 #define SNES_DATA       4 // red
 #define SNES_CLOCK      6 // yellow
+#define OTHER_CONTROLLER      9 // orange
 
 #define SNES_BITCOUNT  16
 
@@ -29,6 +29,7 @@
 
 // Declare some space to store the bits we read from a controller.
 unsigned char rawData[128];
+unsigned char controllerRawData[128];
 
 // names of buttons
 const char* name[] = {
@@ -67,7 +68,7 @@ void read_shiftRegister(unsigned char bits)
 {
   unsigned char *rawDataPtr = rawData;
 
-  WAIT_FALLING_EDGE(SNES_LATCH) ;
+  WAIT_FALLING_EDGE(SNES_LATCH);
 
   do {
       WAIT_FALLING_EDGE(SNES_CLOCK);
@@ -79,9 +80,10 @@ void read_shiftRegister(unsigned char bits)
       else {
         SET_DATA_OUT_HIGH;
       }
+
       ++rawDataPtr;
   }
-  while( --bits > 0 );
+  while(--bits > 0);
 }
 
 // Sends a packet of controller data over the Arduino serial interface.

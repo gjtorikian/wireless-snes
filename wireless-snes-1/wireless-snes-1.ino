@@ -16,20 +16,22 @@
 #define SNES_LATCH      3 // white
 #define SNES_DATA       4 // red
 #define SNES_CLOCK      6 // yellow
-#define OTHER_CONTROLLER      9 // orange
 
 #define SNES_BITCOUNT  16
 
-#define SET_DATA_OUT_LOW  PORTB &=~(1<<DATA_OUT_PIN);
-#define SET_DATA_OUT_HIGH PORTB |= (1<<DATA_OUT_PIN);
+#define SET_DATA_OUT_LOW  PORTB &=~ (1<<PORTB2); // digitalWrite (10, LOW);
+#define SET_DATA_OUT_HIGH PORTB |=(1<< PORTB2);  // digitalWrite (10, HIGH);
 
-#define ZERO  '\0'  // Use a byte value of 0x00 to represent a bit with value 0.
-#define ONE    '1'  // Use an ASCII one to represent a bit with value 1.  This makes Arduino debugging easier.
+RF24 radio(7, 8); // CE, CSN
+
+const byte thisAddress[6] = "SNES1";
+const byte otherAddress[6] = "SNES2";
+
 #define SPLIT '\n'  // Use a new-line character to split up the controller state packets.
 
 // Declare some space to store the bits we read from a controller.
-unsigned char rawData[128];
-unsigned char controllerRawData[128];
+unsigned char thisController[SNES_BITCOUNT];
+unsigned char otherController[SNES_BITCOUNT];
 
 // names of buttons
 const char* name[] = {
@@ -60,14 +62,20 @@ void setup()
   DDRB |= (1<<DATA_OUT_PORT); // pin 10 is in output mode
   SET_DATA_OUT_HIGH;
 
+  radio.begin();
+  radio.openWritingPipe(thisAddress);
+  radio.setPALevel(RF24_PA_MIN);
+  radio.stopListening();
+  
   Serial.begin(115200);
 }
 
-// Reading SNES controller data.
+// Read SNES controller data
 void read_shiftRegister(unsigned char bits)
 {
-  unsigned char *rawDataPtr = rawData;
-
+  unsigned char *rawDataPtr = thisController;
+  //radio.read(&otherController, sizeof(otherController));
+  
   WAIT_FALLING_EDGE(SNES_LATCH);
 
   do {
@@ -84,6 +92,8 @@ void read_shiftRegister(unsigned char bits)
       ++rawDataPtr;
   }
   while(--bits > 0);
+
+  radio.write(&thisController, sizeof(thisController));
 }
 
 // Sends a packet of controller data over the Arduino serial interface.
@@ -92,11 +102,17 @@ inline void sendRawData()
 {
   unsigned char i = 0;
   for(i; i < SNES_BITCOUNT; i++) {
-    if (rawData[i]) {
+    if (thisController[i]) {
+      Serial.print(" This controller ");
       Serial.print(name[i]);
+      Serial.print(SPLIT);
+    }
+    if (otherController[i]) {
+      Serial.print(" Other controller ");
+      Serial.print(name[i]);
+      Serial.print(SPLIT);
     }
   }
-  Serial.write(SPLIT);
 }
 
 void loop()

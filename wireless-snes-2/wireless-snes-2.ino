@@ -10,19 +10,13 @@
 
 #define WAIT_FALLING_EDGE(pin) while( !PIN_READ(pin) ); while( PIN_READ(pin) );
 
-#define DATA_OUT_PIN  PORTB2 // 10
-#define DATA_OUT_PORT DDB2   // 10
-
 #define SNES_LATCH      3 // white
 #define SNES_DATA       4 // red
 #define SNES_CLOCK      6 // yellow
 
 #define SNES_BITCOUNT  16
 
-#define SET_DATA_OUT_LOW  PORTB &=~ (1<<PORTB2); // digitalWrite (10, LOW);
-#define SET_DATA_OUT_HIGH PORTB |=(1<< PORTB2);  // digitalWrite (10, HIGH);
-
-RF24 radio(7, 8); // CE, CSN
+RF24 radio(9, 10); // CE, CSN
 
 const byte thisAddress[6] = "SNES2";
 const byte otherAddress[6] = "SNES1";
@@ -59,14 +53,13 @@ void setup()
   DDRD  = 0x00;
   DDRC  = 0x00;
 
-  DDRB |= (1<<DATA_OUT_PORT); // pin 10 is in output mode
-  SET_DATA_OUT_HIGH;
 
   radio.begin();
   radio.openReadingPipe(0, otherAddress);
+  //radio.openWritingPipe(thisAddress);
   radio.setPALevel(RF24_PA_MIN);
   radio.startListening();
-  
+
   Serial.begin(115200);
 }
 
@@ -75,7 +68,7 @@ void read_shiftRegister(unsigned char bits)
 {
   unsigned char *rawDataPtr = thisController;
   radio.read(&otherController, sizeof(otherController));
-  
+
   WAIT_FALLING_EDGE(SNES_LATCH);
 
   do {
@@ -83,29 +76,25 @@ void read_shiftRegister(unsigned char bits)
 
       *rawDataPtr = !PIN_READ(SNES_DATA);
 
-      if (bits > 3 && bits < 6) {
-        SET_DATA_OUT_LOW;
-      } else {
-        SET_DATA_OUT_HIGH;
-      }
       ++rawDataPtr;
   }
   while(--bits > 0);
+
+  //radio.write(&thisController, sizeof(thisController));
 }
 
 // Sends a packet of controller data over the Arduino serial interface.
-// Mostly for debugging.
 inline void sendRawData()
 {
   unsigned char i = 0;
   for(i; i < SNES_BITCOUNT; i++) {
     if (thisController[i]) {
-      Serial.print(" This controller ");
+      Serial.print("This controller:");
       Serial.print(name[i]);
       Serial.print(SPLIT);
     }
     if (otherController[i]) {
-      Serial.print(" Other controller ");
+      Serial.print("Other controller:");
       Serial.print(name[i]);
       Serial.print(SPLIT);
     }

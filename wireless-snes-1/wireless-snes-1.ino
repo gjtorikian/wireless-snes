@@ -10,9 +10,13 @@
 
 #define WAIT_FALLING_EDGE(pin) while( !PIN_READ(pin) ); while( PIN_READ(pin) );
 
+#define SET_DATA_OUT_LOW   (PORTB &= ~_BV (0))
+#define SET_DATA_OUT_HIGH  (PORTB |= _BV (0))
+
 #define SNES_LATCH      3 // white
-#define SNES_DATA       4 // red
+#define SNES_DATA_IN    4 // red
 #define SNES_CLOCK      6 // yellow
+#define SNES_DATA_OUT   8 // orange
 
 #define SNES_BITCOUNT  16
 
@@ -53,6 +57,11 @@ void setup()
   DDRD  = 0x00;
   DDRC  = 0x00;
 
+  pinMode(SNES_DATA_IN, INPUT_PULLUP); 
+  
+  pinMode(SNES_DATA_OUT, OUTPUT);
+  digitalWrite(SNES_DATA_OUT, HIGH);
+    
   radio.begin();
   radio.openWritingPipe(thisAddress);
   //radio.openReadingPipe(1, otherAddress);
@@ -73,8 +82,13 @@ void read_shiftRegister(unsigned char bits)
   do {
       WAIT_FALLING_EDGE(SNES_CLOCK);
 
-      *rawDataPtr = !PIN_READ(SNES_DATA);
-
+      *rawDataPtr = !PIN_READ(SNES_DATA_IN);
+      
+      if (otherController[16 - bits])
+        SET_DATA_OUT_LOW;
+      else
+        SET_DATA_OUT_HIGH;
+        
       ++rawDataPtr;
   }
   while(--bits > 0);
@@ -109,3 +123,4 @@ void loop()
     sendRawData();
   }
 }
+

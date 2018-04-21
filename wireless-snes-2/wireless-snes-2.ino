@@ -4,7 +4,7 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 #define PIN_READ(pin)  (PIND&(1<<(pin)))
 
@@ -57,16 +57,15 @@ void setup()
   DDRD  = 0x00;
   DDRC  = 0x00;
 
-  pinMode(SNES_DATA_IN, INPUT_PULLUP); 
-  
+  pinMode(SNES_DATA_IN, INPUT_PULLUP);
+
   pinMode(SNES_DATA_OUT, OUTPUT);
   digitalWrite(SNES_DATA_OUT, HIGH);
-    
+
   radio.begin();
-  radio.openReadingPipe(0, otherAddress);
-  //radio.openWritingPipe(thisAddress);
+  radio.openReadingPipe(1, otherAddress);
+  radio.openWritingPipe(thisAddress);
   radio.setPALevel(RF24_PA_MIN);
-  radio.startListening();
 
   Serial.begin(115200);
 }
@@ -75,24 +74,28 @@ void setup()
 void read_shiftRegister(unsigned char bits)
 {
   unsigned char *rawDataPtr = thisController;
+
+  radio.startListening();
   radio.read(&otherController, sizeof(otherController));
+
   WAIT_FALLING_EDGE(SNES_LATCH);
 
   do {
       WAIT_FALLING_EDGE(SNES_CLOCK);
 
       *rawDataPtr = !PIN_READ(SNES_DATA_IN);
-      
-      if (otherController[16 - bits])
+
+      if (otherController[SNES_BITCOUNT - bits])
         SET_DATA_OUT_LOW;
       else
         SET_DATA_OUT_HIGH;
-        
+
       ++rawDataPtr;
   }
   while(--bits > 0);
 
-  //radio.write(&thisController, sizeof(thisController));
+  radio.stopListening();
+  radio.write(&thisController, sizeof(thisController));
 }
 
 // Sends a packet of controller data over the Arduino serial interface.
@@ -122,4 +125,3 @@ void loop()
     sendRawData();
   }
 }
-

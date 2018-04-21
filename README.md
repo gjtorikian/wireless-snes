@@ -7,7 +7,7 @@ Based very heavily on @jasburns' [NintendoSpy](https://github.com/jaburns/Ninten
 * LATCH to pin 3
 * DATA IN to pin 4 (this is from the current SNES controller)
 * CLOCK to pin 6
-* DATA OUT to pin 10 (this is for the other SNES controller)
+* DATA OUT to pin 8 (this is for the other SNES controller)
 
 ## Further reading
 
